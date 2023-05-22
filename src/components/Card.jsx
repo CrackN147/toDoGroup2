@@ -1,13 +1,61 @@
-import { useDrag } from 'react-dnd'
+import {useRef} from 'react'
+import { useDrag, useDrop } from 'react-dnd'
 export function Card(props) {
-  const { className, title } = props;
-  const [{ isDragging }, drag] = useDrag(() => ({
+  const { className, title, updateTempTaskId, moveCard, index } = props;
+  const ref = useRef(null)
+  const [{ handlerId }, drop] = useDrop({
+    accept: "box",
+    collect(monitor) {
+      return {
+        handlerId: monitor.getHandlerId(),
+      }
+    },
+    hover(item, monitor) {
+      if (!ref.current) {
+        return
+      }
+      const dragIndex = item.index
+      const hoverIndex = index
+      // Don't replace items with themselves
+      if (dragIndex === hoverIndex) {
+        return
+      }
+      // Determine rectangle on screen
+      const hoverBoundingRect = ref.current?.getBoundingClientRect()
+      // Get vertical middle
+      const hoverMiddleY =
+        (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
+      // Determine mouse position
+      const clientOffset = monitor.getClientOffset()
+      // Get pixels to the top
+      const hoverClientY = clientOffset.y - hoverBoundingRect.top
+      // Only perform the move when the mouse has crossed half of the items height
+      // When dragging downwards, only move when the cursor is below 50%
+      // When dragging upwards, only move when the cursor is above 50%
+      // Dragging downwards
+      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
+        return
+      }
+      // Dragging upwards
+      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
+        return
+      }
+      // Time to actually perform the action
+      moveCard(dragIndex, hoverIndex)
+      // Note: we're mutating the monitor item here!
+      // Generally it's better to avoid mutations,
+      // but it's good here for the sake of performance
+      // to avoid expensive index searches.
+      item.index = hoverIndex
+    },
+  })
+  const [{ }, drag] = useDrag(() => ({
     type: 'box',
     item: title,
     end: (item, monitor) => {
       const dropResult = monitor.getDropResult()
       if (item && dropResult) {
-        alert(`You dropped ${item.name} into ${dropResult.name}!`)
+        updateTempTaskId()
       }
     },
     collect: (monitor) => ({
@@ -15,8 +63,9 @@ export function Card(props) {
       handlerId: monitor.getHandlerId(),
     }),
   }))
+  drag(drop(ref))
   return (
-    <div ref={drag} data-testid={`box`} className={className}>
+    <div ref={ref} data-testid={`${title}-box`} className={className}>
       {title}
     </div>
   )
