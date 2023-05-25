@@ -1,7 +1,16 @@
 import {useRef} from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 export function Card(props) {
-  const { className, title, updateTempTaskId, moveCard, index } = props;
+  const { 
+    className, 
+    title, 
+    updateTempTaskId, 
+    moveCard, 
+    index,
+    updateTempTaskDrop,
+    taskId
+  } = props;
+
   const ref = useRef(null)
   const [{ handlerId }, drop] = useDrop({
     accept: "box",
@@ -9,6 +18,9 @@ export function Card(props) {
       return {
         handlerId: monitor.getHandlerId(),
       }
+    },
+    drop() {
+      updateTempTaskDrop()
     },
     hover(item, monitor) {
       if (!ref.current) {
@@ -49,9 +61,11 @@ export function Card(props) {
       item.index = hoverIndex
     },
   })
-  const [{ }, drag] = useDrag(() => ({
+  const [{ isDragging }, drag] = useDrag(() => ({
     type: 'box',
-    item: title,
+    item: () => {
+      return { taskId, index }
+    },
     end: (item, monitor) => {
       const dropResult = monitor.getDropResult()
       if (item && dropResult) {
@@ -65,7 +79,12 @@ export function Card(props) {
   }))
   drag(drop(ref))
   return (
-    <div ref={ref} data-testid={`${title}-box`} className={className}>
+    <div 
+      ref={ref} 
+      data-testid={`${title}-box`} 
+      className={className} 
+      data-handler-id={handlerId}
+    >
       {title}
     </div>
   )

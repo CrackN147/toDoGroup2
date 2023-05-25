@@ -9,15 +9,29 @@ export const TasksProvider = ({ children }) => {
     []
   )
 
-  const [tempTaskId, setTempTaskId] = useState(null)
-  const [tempTaskStatus, setTempTaskStatus] = useState(null)
+  const [tempTaskId, setTempTaskId] = useState(null);
+  const [tempTaskStatus, setTempTaskStatus] = useState(null);
+  const [tempTaskSort, setTempTaskSort] = useState(null);
+  const [tempTaskDrop, setTempTaskDrop] = useState(null);
 
-  const updateTempTaskId = (id) => {console.log(id)
+  const updateTempTaskId = (id) => {
+    // console.log(id)
     setTempTaskId(id)
   }
 
-  const updateTempTaskStatus = (status) => {console.log(status)
+  const updateTempTaskStatus = (status) => {
+    // console.log(status)
     setTempTaskStatus(status)
+  }
+
+  const updateTempTaskDrop = (status) => {
+    // console.log(status)
+    setTempTaskDrop(status)
+  }
+
+  const updateTempTaskSort = (sort) => {
+    // console.log(sort)
+    setTempTaskSort(sort)
   }
 
   const setVars = (data) => {
@@ -40,16 +54,29 @@ export const TasksProvider = ({ children }) => {
   }
 
   useEffect(() => {
+    if (tempTaskDrop !== null && tempTaskSort !== null) {
+      let newTasks = [...tasks]
+      let draggedElement = newTasks.find((task) => task.id === tempTaskDrop)
+      let changedElement = newTasks.find((task) => task.id === tempTaskSort)
+      if (!draggedElement || !changedElement) return
+      let draggedElementSort = draggedElement.sort
+      let changedElementSort = changedElement.sort
+      draggedElement.sort = changedElementSort
+      changedElement.sort = draggedElementSort
+      setTempTaskDrop(null)
+      setTempTaskSort(null)
+      setVars(newTasks)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tempTaskDrop, tempTaskSort])
+
+  useEffect(() => {
     if (tempTaskId !== null && tempTaskStatus !== null) {
       const changeStatus = (id, newStatus) => {
         let newTasks = [...tasks]
         let task = newTasks.find((task) => task.id === id);
-        task.sort = newTasks.filter((task) => task.status === newStatus).length + 1
+        if (task.status === newStatus) return
         task.status = newStatus;
-        // newTasks = newTasks.map((task) => {
-        //   if (task.id !== id) {
-
-        //   }
         setVars(newTasks)
       }
       changeStatus(tempTaskId, tempTaskStatus)
@@ -64,7 +91,9 @@ export const TasksProvider = ({ children }) => {
       tasks,
       createTask,
       updateTempTaskId,
-      updateTempTaskStatus
+      updateTempTaskStatus,
+      updateTempTaskDrop,
+      updateTempTaskSort
      }}>
       {children}
     </TasksContext.Provider>
